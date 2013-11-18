@@ -1,0 +1,45 @@
+<html>
+    <head>
+        <title>oauth stuff testing</title>
+        <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+    </head>
+    <body>
+        <h1>oauth stuff testing</h1>
+        <button class="test" data-base="twitterproxy">Test new</button>
+        <button class="test" data-base="twitter-orig">Test old</button>
+        <ul id="results">
+            
+        </ul>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $(".test").click(function (e) {
+                    e.preventDefault();
+                    
+                    $("#results").empty();
+                    
+                    var base = $(this).data('base');
+                    
+                    $.ajax({
+                        url: '/' + base + '.php/search/tweets.json',
+                        data: {
+                           q: 'apple',
+                           count: 10
+                        },
+                        dataType: 'json',
+                        success: function (result) {
+                           for (var i = 0; i < result.statuses.length; i++) {
+                               $("#template>.tweet").clone().text(result.statuses[i].text).appendTo("#results");
+                           }
+                        },
+                        error: function () {
+                           $("#results").append("<li>An error occurred.</li>");
+                        }
+                    });
+                });
+            });
+        </script>
+        <div id="template" style="display: none;">
+            <li class="tweet"><span class="text"></span></li>
+        </div>
+    </body>
+</html>

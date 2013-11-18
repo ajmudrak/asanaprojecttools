@@ -1,0 +1,10 @@
+[12-Nov-2013 18:45:57] PHP Fatal error:  Call to protected method OAuthService::apiCall() from context 'ProxyApi' in /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/lib/oauthservice.php on line 190
+[12-Nov-2013 18:45:57] PHP Stack trace:
+[12-Nov-2013 18:45:57] PHP   1. {main}() /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/index.php:0
+[12-Nov-2013 18:45:57] PHP   2. ProxyApi->proxyApiCallWithBearerAccessToken2() /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/index.php:10
+[12-Nov-2013 18:45:57] PHP   3. ProxyApi->proxyApiCall() /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/lib/oauthservice.php:178
+[12-Nov-2013 18:46:03] PHP Fatal error:  Call to protected method OAuthService::apiCall() from context 'ProxyApi' in /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/lib/oauthservice.php on line 190
+[12-Nov-2013 18:46:03] PHP Stack trace:
+[12-Nov-2013 18:46:03] PHP   1. {main}() /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/index.php:0
+[12-Nov-2013 18:46:03] PHP   2. ProxyApi->proxyApiCallWithBearerAccessToken2() /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/index.php:10
+[12-Nov-2013 18:46:03] PHP   3. ProxyApi->proxyApiCall() /var/lib/stickshift/527ceae25973caeeed0007a8/app-root/data/673531/api/lib/oauthservice.php:178

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Crazy test</title>
+        <style type="text/css">
+            code {
+                white-space: pre;
+            }
+        </style>
+        <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script src="peg.js"></script>
+        <script type="text/javascript">
+            var code;
+            var result;
+            $(document).ready(function () {
+                // var code = $('#test').text();
+                // var codepattern = /^\s*xhrwait\s+.*;/;
+                
+                var parser = null;// = PEG.buildParser("start = ('a' / 'b')+");
+                //parser.parse("abba"); // returns ["a", "b", "b", "a"]
+                
+                code = $('#test').text();
+                
+                $.ajax({
+                    url: 'js.peg',
+                    dataType: 'text',
+                    success: function(data) {
+                        parser = PEG.buildParser(data, {
+                            trackLineAndColumn: true
+                        });
+                        console.log('parser ready');
+                        
+                        result = parser.parse(code);
+                        
+                        /// TODO: change this code so it properly reads through the results and can auto generate the code
+                        // for each xhrvar (in all code blocks, deep: (elements, statements, etc.)... be careful of ifstatement, and other blocks, need to check them out)
+                        //   find the next sibling in its block, then last sibling in block
+                        //   and take the resulting concatenated text of all elements and place as inner code
+                        //   insert inner code into an appended 'done' handler function, whose only parameter is the text from the declaration variable for the xhrvar
+                        //   replace occurrence with the new code
+                        //   keep +/- offset of the change from results
+                        
+                        var hardinner = code.substring(
+                            result.elements[0 + 1].offset, 
+                            result.elements[result.elements.length - 1].offset 
+                                + result.elements[result.elements.length - 1].text.length
+                        ) + ';';
+                        
+                        var hard = result.elements[0].declarations[0].value.text + '.done(function (' + result.elements[0].declarations[0].name + ') { \n' + hardinner + '\n});\n';
+                        
+                        $("#result").text(hard);
+                        // $("#result").text(JSON.stringify(result, null, '    '));
+                    }
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <h1>Crazy test</h1>
+        <div>
+            <code id="result"></code>
+        </div>
+        <div>
+            <code id="test">
+                xhrvar x = $.ajax({ url:'test.json' });
+                $('#result').text(x);
+                console.log('done: ' + x);
+            </code>
+        </div>
+        <div>
+            <code id="sample">
+                $.ajax({ url:'test.json' }).success(function () {
+                    $('#result').text(x);
+                    console.log('done: ' + x);
+                });
+            </code>
+        </div>
+    </body>
+</html>

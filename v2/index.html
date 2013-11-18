@@ -1,0 +1,102 @@
+<html>
+    <head>
+        <title>Asana Test</title>
+        <style type="text/css">
+            #signin, #app {
+                display: none;
+            }
+            ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            li {
+                margin: 0;
+                padding: 0;
+            }
+            #projects {
+                float: left;
+                margin: 10px;
+                padding: 10px;
+                border: 1px solid #999;
+                width: 300px;
+                height: 500px;
+                overflow: auto;
+            }
+            #tasks {
+                float: left;
+                margin: 10px;
+                padding: 10px;
+                border: 1px solid #999;
+                width: 500px;
+                height: 500px;
+                overflow: auto;
+            }
+            .project.selected {
+                background: #333;
+                color: #fff;
+            }
+            #project_context {
+                height: 32px;
+                overflow: auto;
+            }
+            #project_context>* {
+                display: none;
+            }
+        </style>
+        <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+    </head>
+    <body>
+        <div id="errors"></div>
+        
+        
+        
+        
+        <div id="app">
+            <div id="signin_info">
+                <p class="signin_info">You're currently signed into Asana:</p>
+                <div id="me" class="profile">
+                    <img class="photo" />
+                    <div class="name"></div>
+                </div>
+                <div>
+                    <select id="workspaces" class="workspace_list">
+                        <option value="">[Choose a workspace]</option>
+                    </select>
+                </div>
+                <div>
+                    <a href="/api/oauth-signout.php/Asana" id="signout_btn">Sign out</a>
+                </div>
+            </div>
+            <div id="workspace">
+                <div id="project_context">
+                    <div class="whenchecked"><button id="copyto">Copy Projects...</button></div>
+                </div>
+                <ul id="projects" class="project_list">
+                </ul>
+                <div id="project">
+                    <ul id="tasks"></ul>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        
+        <div id="signin">
+            <a href="/api/oauth-signin.php/Asana" id="signin_btn"><img src="/images/asana-oauth-button-blue.png" alt="Sign in with Asana" /></a>
+        </div>
+        
+        
+        
+        
+        <div id="template" style="display: none">
+            <option class="workspace"></option>
+            <li class="project">
+                <input type="checkbox" class="check" /> <label class="name"></label>
+            </li>
+            <li class="task"><a href="javascript:" class="name link"></a><div class="other"></div></li>
+        </div>
+        <script type="text/javascript" src="app.js"></script>
+    </body>
+</html>

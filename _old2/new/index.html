@@ -1,0 +1,111 @@
+<html>
+    <head>
+        <title>Asana test 1</title>
+        <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+        <style type="text/css">
+            #signin, #app {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="signin">
+            <a href="" id="signin_btn"><img src="/images/asana-oauth-button-blue.png" alt="Sign in with Asana" /></a>
+        </div>
+        <div id="app">
+            <p>You're signed in already!  probably...</p>
+            <div id="me"></div>
+            <a href="javascript:" id="signout">Sign out</a>
+        </div>
+        <div id="x"></div>
+        <script type="text/javascript">
+            var asana_token = null;
+                
+            $(document).ready(function () {
+                
+                if (window.location.hash) {
+                    var params = getParams(window.location.hash.slice(1));
+                    if ('access_token' in params) {
+                        asana_token = params.access_token;
+                        localStorage['token'] = asana_token;
+                        window.location.hash = '';
+                    }
+                }
+                
+                // load token from local storage if not found
+                if (!asana_token) {
+                    asana_token = localStorage['token'];
+                }
+
+                // if no token, show signin
+                if (!asana_token) {
+                    $("#signin").show();
+                    var signin = $("#signin_btn");
+                    signin.attr("href", 'https://app.asana.com/-/oauth_authorize?' + $.param({
+                        client_id: '8553566333610',
+                        redirect_uri: 'https://asanaprojecttools-c9-ajmudrak.c9.io/new/',
+                        response_type: 'token'
+                    }));
+                } else {
+                    $("#app").show();
+                    runApp();
+                }
+                
+            });
+            
+            function runApp() {
+                // this runs when we first load, and are signed in
+                
+                $('#signout').click(function (e) {
+                   e.preventDefault();
+                   localStorage.removeItem('token');
+                   window.location = window.location;
+                });
+                
+                // load current user info
+                $.ajax({
+                    url: 'https://app.asana.com/api/1.0/users/me',
+                    type: 'GET',
+                    dataType: 'jsonp',
+                    jsonp: 'opt_jsonp',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('X-Authorization', 'Foo');
+                    },
+                    success: function (me) {
+                        $("#me").text(JSON.stringify(me));
+                    },
+                    error: function() {
+                        $("#me").text("An error occurred.");
+                    }
+                });
+                
+                $.ajax({
+                    url: '/abc',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Foo'
+                    }
+                })
+            }
+            
+            function getParams(querystring) {
+                var obj = {};
+                var pairs = querystring.split('&');
+                pairs.forEach(function(pair) {
+                    pair = pair.split('=');
+                    /// TODO: handle query parameters that include explicit array indices (e.g. something[index]=value)
+                    if (pair[0] in obj) {
+                        if ($.isArray(obj[pair[0]])) {
+                            obj[pair[0]].push(decodeURIComponent(pair[1]));
+                        } else {
+                            obj[pair[0]] = [ obj[pair[0]], decodeURIComponent(pair[1]) ];
+                        }
+                    } else {
+                        obj[pair[0]] = decodeURIComponent(pair[1]);
+                    }
+                });
+                return obj;
+            }
+        </script>
+    </body>
+</html>
