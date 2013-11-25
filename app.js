@@ -157,8 +157,9 @@ $(document).ready(function () {
             }
         }
         
-        var processing_modal = $('processing_modal')
+        var processing_modal = $('#processing_modal')
             .modal({ show: false, keyboard: false });
+            
         var copyto_modal = $('#copyto_modal')
             .modal({
                 show: false,
@@ -170,14 +171,42 @@ $(document).ready(function () {
             .click(function () {
                 var workspace = copyto_workspace_choice.val();
                 var list = copyto_project_list.data('list');
+                copyto_modal.modal('hide');
                 processing_modal.modal('show');
                 copyProjects(list, workspace, function () {
                     processing_modal.modal('hide');
+                    workspaces.change();
                 });
             });
         copyto_workspace_choice.change(function () {
             copyto_action.prop('disabled', $(this).val() ? false : true);
         });
+        
+        var delete_project_modal = $('#delete_project_modal')
+            .modal({
+                show: false,
+                keyboard: false
+            });
+        var delete_project_list = delete_project_modal.find('.projectlist');
+        var delete_project_action = $('#delete_project_action')
+            .click(function () {
+                var list = delete_project_list.data('list');
+                delete_project_modal.modal('hide');
+                processing_modal.modal('show');
+                deleteProjects(list, function () {
+                    processing_modal.modal('hide');
+                    workspaces.change();
+                });
+            });
+
+        var setProgress = function(progress) {
+            processing_modal
+                .find('.progress-bar')
+                .attr('aria-valuenow', progress)
+                .css('width', progress + '%')
+                .children('.sr-only')
+                .text(progress + '% complete');
+        };
 
         $('#copyto').click(function () {
             // gather list of projects that are checked, to be copied
@@ -200,55 +229,178 @@ $(document).ready(function () {
             copyto_modal.modal('show');
         });
         
+        $('#deleteprojects').click(function () {
+            // gather list of projects that are checked, to be copied
+            var list = [];
+            var msg = '';
+            $('#projects .project .check:checked').parent().each(function () {
+                var proj = $(this).data('obj');
+                list.push(proj);
+                msg += proj.name + "\n";
+            });
+            // fill in text in modal
+            delete_project_list
+                .text(msg)
+                .data('list', list);
+            delete_project_modal.modal('show');
+        });
+        
+        function deleteProjects(projectlist, callback) {
+            // iterate over projects
+            var p = 0;
+            var doProject, nextProject, endProject;
+            var project;
+            
+            doProject = function() {
+                if (p >= projectlist.length) {
+                    endProject();
+                    return;
+                }
+                project = projectlist[p];
+                
+                //   load all tasks for project
+                asana_delete_project(project.id, {
+                    success: nextProject
+                });
+            };
+            nextProject = function() {
+                setProgress(Math.round(p / projectlist.length * 100));
+                p++;
+                doProject();
+            };
+            endProject = function() {
+                if (callback) {
+                    callback();
+                }
+            }
+            
+            // run the async workflow above
+            doProject();
+        }
+        
         function copyProjects(projectlist, destination_workspace, callback) {
             // iterate over projects
-            projectlist.forEach(function (project) {
+            var p = 0;
+            var doProject, doProject2, doProject3, nextProject, endProject;
+            var project;
+            var sourcetasks;
+            var newproject;
+            
+            var i = 0;
+            var s = 0;
+            var doTask, doTask2, doTask3, doSubtask, nextSubtask, endSubtask, nextTask, endTask;
+            var newTask;
+            var subtasks;
+            
+            // for each project in projectlist
+            doProject = function() {
+                if (p >= projectlist.length) {
+                    endProject();
+                    return;
+                }
+                project = projectlist[p];
+                
                 //   load all tasks for project
                 asana_get_tasks(project.id, {
-                    success: function (result) {
-                        var sourcetasks = result.data;
-                        //   create new project in workspace
-                        var newproj = {
-                            name: project.name,
-                            archived: project.archived,
-                            workspace: destination_workspace
-                        };
-                        if (project.color) {
-                            newproj.color = project.color;
-                        }
-                        if (project.notes) {
-                            newproj.notes = project.notes;
-                        }
-                        asana({
-                            url: 'projects',
-                            type: 'POST',
-                            data: newproj,
-                            success: function (result) {
-                                var newproject = result.data;
-                                //   iterate over all tasks for project
-                                var i = 0;
-                                var nextFunc;
-                                nextFunc = function(taskresult) {
-                                    if (++i >= sourcetasks.length) {
-                                        if (callback) {
-                                            callback();
-                                        }
-                                        return;
-                                    }
-                                    asana_create_task(destination_workspace, newproject.id, sourcetasks[i], {
-                                        success: nextFunc
-                                    });
-                                };
-                                //     create new task in new project
-                                asana_create_task(destination_workspace, newproject.id, sourcetasks[i], {
-                                    success: nextFunc
-                                });
-                            }
-                        });
-                        
-                    }
+                    success: doProject2
                 });
-            });
+            };
+            doProject2 = function(taskListResult) {
+                sourcetasks = taskListResult.data;
+                //   create new project in workspace
+                var newproj = {
+                    name: project.name,
+                    archived: project.archived,
+                    workspace: destination_workspace
+                };
+                if (project.color) {
+                    newproj.color = project.color;
+                }
+                if (project.notes) {
+                    newproj.notes = project.notes;
+                }
+                asana({
+                    url: 'projects',
+                    type: 'POST',
+                    data: newproj,
+                    success: doProject3
+                });
+            };
+            doProject3 = function(projectresult) {
+                newproject = projectresult.data;
+                // create new task in new project
+                i = sourcetasks.length - 1;
+                //   iterate over all tasks for project
+                doTask();
+            };
+            
+                // for each task in sourcetasks (in reverse)
+                doTask = function() {
+                    if (i < 0) {
+                        endTask();
+                        return;
+                    }
+                    asana_create_task(destination_workspace, newproject.id, sourcetasks[i], {
+                        success: doTask2
+                    });
+                };
+                doTask2 = function(taskresult) {
+                    newTask = taskresult.data;
+                    // now copy the source tasks's subtasks to the new task
+                    // get subtasks
+                    asana_get_subtasks(sourcetasks[i].id, {
+                        success: doTask3
+                    });
+                };
+                doTask3 = function(subtaskresult) {
+                    subtasks = subtaskresult.data;
+                    // iterate subtasks
+                    s = subtasks.length - 1;
+                    doSubtask();
+                };
+                
+                    // for each subtask in subtasks (in reverse)
+                    doSubtask = function() {
+                        if (s < 0) {
+                            endSubtask();
+                            return;
+                        }
+                        // set the parent task to the new task we're adding to
+                        subtasks[s]['parent'] = newTask.id;
+                        asana_create_task(destination_workspace, null, subtasks[s], {
+                            success: nextSubtask
+                        });
+                    };
+                    nextSubtask = function() {
+                        s--;
+                        doSubtask();
+                    };
+                    endSubtask = function () {
+                        nextTask();
+                    };
+                    
+                nextTask = function() {
+                    var progress = Math.round(((sourcetasks.length - i) / sourcetasks.length / projectlist.length * 100) + (p / projectlist.length));
+                    setProgress(progress);
+                    i--;
+                    doTask();
+                };
+                endTask = function() {
+                    nextProject();
+                };
+                
+            nextProject = function() {
+                p++;
+                doProject();
+            };
+            endProject = function() {
+                if (callback) {
+                    callback();
+                }
+            }
+            
+            // start the async workflow above
+            doProject();
         }
 
     }
@@ -263,20 +415,36 @@ $(document).ready(function () {
     
     function asana_create_task(workspaceid, projectid, task, options, loaditem) {
         options.url = 'tasks';
+        if (task['parent']) {
+            // set the url to add a subtask, when parent is found on task
+            options.url += '/' + encodeURIComponent(task['parent']) + '/subtasks';
+        }
         options.type = 'POST';
         if (!options.data) {
             options.data = {
                     name: task.name,
                     completed: task.completed,
-                    projects: [ projectid ],
                     workspace: workspaceid
             };
+            if (projectid) {
+                options.data.projects = [ projectid ];
+            }
             if (task.due_on) {
                 options.data.due_on = task.due_on;
             }
             if (task.notes) {
                 options.data.notes = task.notes;
             }
+        }
+        return asana(options, loaditem);
+    }
+    
+    function asana_get_subtasks(parentTaskId, options, loaditem) {
+        options.url = 'tasks/' + encodeURIComponent(parentTaskId) + '/subtasks';
+        if (!options.data) {
+            options.data = {
+                opt_fields: 'name,completed,assignee,assignee_status,due_on,notes'
+            };
         }
         return asana(options, loaditem);
     }
@@ -288,6 +456,17 @@ $(document).ready(function () {
                 opt_fields: 'name,completed,assignee,assignee_status,due_on,notes'
             };
         }
+        return asana(options, loaditem);
+    }
+    
+    function asana_delete_project(projectid, options, loaditem) {
+        options.url = 'projects/' + encodeURIComponent(projectid);
+        if (!options.data) {
+            options.data = {
+                opt_fields: 'name,completed,assignee,assignee_status,due_on,notes'
+            };
+        }
+        options.type = 'DELETE';
         return asana(options, loaditem);
     }
     

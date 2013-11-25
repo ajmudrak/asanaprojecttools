@@ -12,5 +12,31 @@ class OAuthService_Asana extends OAuthService {
     public $authorizeurl = 'https://app.asana.com/-/oauth_authorize';
     public $redirect_baseuri = 'https://asanaprojecttools-c9-ajmudrak.c9.io/api/oauth-callback.php/Asana';
     public $response_type = 'code';
+    public $grant_type = 'authorization_code'; // authorization_code, password
     public $app_url = '/';
+}
+
+class OAuthService_TwitterClient extends OAuthService {
+    public $consumerkey = 'L3GvfNww98AfJL46MIZA';
+    public $consumersecret = '0h4hgtYuFDnyrdQfdkjwLZj5e5iHzRy5oLtl8WsTfjU';
+    public $apibaseurl = 'https://api.twitter.com/1.1';
+    public $tokenurl = 'https://api.twitter.com/oauth2/token';
+
+    public $oauth_version = 2;
+    public $grant_type = 'client_credentials';
+}
+
+class OAuthService_Twitter extends OAuthService {
+    public $consumerkey = 'L3GvfNww98AfJL46MIZA';
+    public $consumersecret = '0h4hgtYuFDnyrdQfdkjwLZj5e5iHzRy5oLtl8WsTfjU';
+    public $apibaseurl = 'https://api.twitter.com/1.1';
+    public $tokenurl = 'https://api.twitter.com/oauth/access_token';
+    public $authorizeurl = 'https://api.twitter.com/oauth/authorize';
+    public $redirect_baseuri = 'https://asanaprojecttools-c9-ajmudrak.c9.io/api/oauth-callback.php/Twitter';
+    public $response_type = 'code';
+    public $app_url = '/twittertest2.html';
+    
+    public $oauth_version = 1;
+    public $requesttokenurl = 'https://api.twitter.com/oauth/request_token';
+    public $signature_method = 'HMAC-SHA1';
 }

@@ -1,0 +1,49 @@
+#signin, #app {
+    display: none;
+}
+#projects {
+    float: left;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #999;
+    width: 300px;
+    height: 500px;
+    overflow: auto;
+}
+#tasks {
+    float: left;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #999;
+    width: 500px;
+    height: 500px;
+    overflow: auto;
+}
+.whenchecked {
+    display: none;
+}
+/*.project.active {*/
+/*    background: #333;*/
+/*    color: #fff;*/
+/*}*/
+/*#project_context {*/
+/*    height: 32px;*/
+/*    overflow: auto;*/
+/*}*/
+/*#project_context>* {*/
+/*    display: none;*/
+/*}*/
+#projects .project .check {
+    position: absolute;
+}
+#projects .project label {
+    margin-left: 20px;
+}
+.ajaxloading {
+    background-image: url('/images/ajax-loader.gif');
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+#copyto_modal .projectlist {
+    white-space: pre;
+}

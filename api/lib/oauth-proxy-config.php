@@ -27,18 +27,29 @@ class ProxyApiConfig {
     public static function storeTokens() {
         global $_OAUTH_SERVICE;
         $tokendata = new stdClass();
-        $tokendata->bearerAccessToken = $_OAUTH_SERVICE->bearerAccessToken;
-        $tokendata->bearerRefreshToken = $_OAUTH_SERVICE->bearerRefreshToken;
+        $tokendata->accessToken = $_OAUTH_SERVICE->accessToken;
+        $tokendata->accessTokenSecret = $_OAUTH_SERVICE->accessTokenSecret;
+        $tokendata->requestAccessToken = $_OAUTH_SERVICE->requestAccessToken;
+        $tokendata->requestAccessTokenSecret = $_OAUTH_SERVICE->requestAccessTokenSecret;
+        $tokendata->refreshToken = $_OAUTH_SERVICE->refreshToken;
         $_SESSION[get_class($_OAUTH_SERVICE)] = $tokendata;
     }
     
     public static function getTokens() {
         global $_OAUTH_SERVICE_CLASS, $_OAUTH_SERVICE;
         if (isset($_SESSION[$_OAUTH_SERVICE_CLASS]) && $_SESSION[$_OAUTH_SERVICE_CLASS]) {
-            $_OAUTH_SERVICE->bearerAccessToken = $_SESSION[$_OAUTH_SERVICE_CLASS]->bearerAccessToken;
-            $_OAUTH_SERVICE->bearerRefreshToken = $_SESSION[$_OAUTH_SERVICE_CLASS]->bearerRefreshToken;
+            $_OAUTH_SERVICE->accessToken = $_SESSION[$_OAUTH_SERVICE_CLASS]->accessToken;
+            $_OAUTH_SERVICE->accessTokenSecret = $_SESSION[$_OAUTH_SERVICE_CLASS]->accessTokenSecret;
+            $_OAUTH_SERVICE->requestAccessToken = $_SESSION[$_OAUTH_SERVICE_CLASS]->requestAccessToken;
+            $_OAUTH_SERVICE->requestAccessTokenSecret = $_SESSION[$_OAUTH_SERVICE_CLASS]->requestAccessTokenSecret;
+            $_OAUTH_SERVICE->refreshToken = $_SESSION[$_OAUTH_SERVICE_CLASS]->refreshToken;
         }
         
+    }
+    
+    public static function clearTokens() {
+        global $_OAUTH_SERVICE_CLASS, $_OAUTH_SERVICE;
+        unset($_SESSION[get_class($_OAUTH_SERVICE)]);
     }
 }
 

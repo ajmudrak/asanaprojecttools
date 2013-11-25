@@ -8,9 +8,5 @@ if ($_OAUTH_PATH_INFO !== '') {
     exit;
 }
 
-if (session_id() === '') {
-    session_start();
-}
-unset($_SESSION[get_class($_OAUTH_SERVICE)]);
-
+ProxyApiConfig::clearTokens();
 header('Location: ' . $_OAUTH_SERVICE->getAppUrl());

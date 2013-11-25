@@ -1,0 +1,119 @@
+<!doctype html>
+<html ng-app="twitterApp">
+    <head>
+        <title>Twitter oauth test</title>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap-theme.min.css">
+        <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular.min.js"></script>
+        <style>
+            .my_profile_image {
+                height: 32px;
+                width: auto;
+            }
+        </style>
+    </head>
+    <body ng-controller="mainController">
+        <div class="container">
+            <h1>Twitter oauth test</h1>
+            <div ng-show="twitterLoggedIn">
+                <h2>You're logged in as: <span class="profile" ng-show="userInfo"><img class="my_profile_image" ng-src="{{userInfo.profile_image_url_https}}" alt="Image of {{userInfo.name}}"> {{userInfo.name}}</span> <a href="/api/oauth-signout.php/Twitter">Sign Out</a></h2>
+                <h2>Tweets:</h2>
+                <div class="panel panel-danger" ng-show="errorList.length > 0">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Errors:</h3>
+                    </div>
+                    <ul id="errors" class="list-group">
+                        <li class="list-group-item" ng-repeat="error in errorList">{{error}}</li>
+                    </ul>
+                </div>
+                <ul id="tweetList" class="list-group">
+                    <li class="list-group-item" ng-repeat="tweet in tweetList">
+                        <span class="author">{{tweet.user.name}}</span>
+                        ---
+                        <span class="text">{{tweet.text}}</span>
+                    </li>
+                </ul>
+            </div>
+            <div ng-show="!twitterLoggedIn">
+                <h2>Please log into Twitter:</h2>
+                <a href="/api/oauth-signin.php/Twitter"><img src="https://dev.twitter.com/sites/default/files/images_documentation/sign-in-with-twitter-gray.png" alt="Sign in with Twitter" title="Sign in with Twitter"></a>
+            </div>
+        </div>
+        
+        <script type="text/javascript">
+            var app = angular.module('twitterApp', []);
+            app.controller('mainController', ['$scope', function ($scope) {
+                $scope.errorList = [];
+                $scope.tweetList = [];
+                $scope.userInfo = null;
+                $scope.twitterLoggedIn = false;
+                
+                // determine if the user is logged into twitter
+                $.ajax({
+                    url: '/api/oauth-status.php/Twitter',
+                    dataType: 'json',
+                    success: function (result) {
+                        $scope.$apply(function () {
+                            $scope.twitterLoggedIn = result.loggedIn ? true : false;
+                            if ($scope.twitterLoggedIn) {
+                                // when user is logged into Twitter, we can load some initial data from Twitter
+                                $scope.initialize();
+                            }
+                        });
+                    }
+                });
+                
+                $scope.getTweets = function() {
+                    // load the current user's home timeline of tweets on startup
+                    $scope.tweetList = [];
+                    $scope.errorList = [];
+                    $.ajax({
+                        url: '/api/index.php/Twitter/statuses/home_timeline.json',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(result) {
+                            $scope.$apply(function () {
+                                $scope.tweetList = result;
+                            });
+                        },
+                        error: function(a, b, c) {
+                            $scope.$apply(function () {
+                                $scope.errorList.push('An error occurred getting tweets.');
+                            });
+                        }
+                    });
+                };
+                
+                $scope.getUserInfo = function() {
+                    // load the current user's home timeline of tweets on startup
+                    $scope.userInfo = null;
+                    $scope.errorList = [];
+                    $.ajax({
+                        url: '/api/index.php/Twitter/account/verify_credentials.json',
+                        data: { skip_status: true },
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(result) {
+                            $scope.$apply(function () {
+                                $scope.userInfo = result;
+                            });
+                        },
+                        error: function(a, b, c) {
+                            $scope.$apply(function () {
+                                $scope.errorList.push('An error occurred getting twitter account info.');
+                            });
+                        }
+                    });
+                };
+                
+                $scope.initialize = function() {
+                    $scope.getTweets();
+                    $scope.getUserInfo();
+                };
+
+            }]);
+        </script>
+    </body>
+</html>
