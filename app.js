@@ -281,16 +281,10 @@ $(document).ready(function () {
         function copyProjects(projectlist, destination_workspace, callback) {
             // iterate over projects
             var p = 0;
-            var doProject, doProject2, doProject3, nextProject, endProject;
+            var doProject, doProject2, doProject3, taskProgress, nextProject, endProject;
             var project;
             var sourcetasks;
             var newproject;
-            
-            var i = 0;
-            var s = 0;
-            var doTask, doTask2, doTask3, doSubtask, nextSubtask, endSubtask, nextTask, endTask;
-            var newTask;
-            var subtasks;
             
             // for each project in projectlist
             doProject = function() {
@@ -329,68 +323,16 @@ $(document).ready(function () {
             doProject3 = function(projectresult) {
                 newproject = projectresult.data;
                 // create new task in new project
-                i = sourcetasks.length - 1;
-                //   iterate over all tasks for project
-                doTask();
+                copyTasks(sourcetasks, destination_workspace, newproject.id, null, project.id, taskProgress, nextProject);
             };
+                taskProgress = function(progress) {
+                    var totalProgress = Math.round((progress / projectlist.length) + (p / projectlist.length * 100));
+                    setProgress(totalProgress);
+                };
             
-                // for each task in sourcetasks (in reverse)
-                doTask = function() {
-                    if (i < 0) {
-                        endTask();
-                        return;
-                    }
-                    asana_create_task(destination_workspace, newproject.id, sourcetasks[i], {
-                        success: doTask2
-                    });
-                };
-                doTask2 = function(taskresult) {
-                    newTask = taskresult.data;
-                    // now copy the source tasks's subtasks to the new task
-                    // get subtasks
-                    asana_get_subtasks(sourcetasks[i].id, {
-                        success: doTask3
-                    });
-                };
-                doTask3 = function(subtaskresult) {
-                    subtasks = subtaskresult.data;
-                    // iterate subtasks
-                    s = subtasks.length - 1;
-                    doSubtask();
-                };
-                
-                    // for each subtask in subtasks (in reverse)
-                    doSubtask = function() {
-                        if (s < 0) {
-                            endSubtask();
-                            return;
-                        }
-                        // set the parent task to the new task we're adding to
-                        subtasks[s]['parent'] = newTask.id;
-                        asana_create_task(destination_workspace, null, subtasks[s], {
-                            success: nextSubtask
-                        });
-                    };
-                    nextSubtask = function() {
-                        s--;
-                        doSubtask();
-                    };
-                    endSubtask = function () {
-                        nextTask();
-                    };
-                    
-                nextTask = function() {
-                    var progress = Math.round(((sourcetasks.length - i) / sourcetasks.length / projectlist.length * 100) + (p / projectlist.length));
-                    setProgress(progress);
-                    i--;
-                    doTask();
-                };
-                endTask = function() {
-                    nextProject();
-                };
-                
             nextProject = function() {
                 p++;
+                setProgress(Math.round(p / projectlist.length * 100));
                 doProject();
             };
             endProject = function() {
@@ -402,6 +344,102 @@ $(document).ready(function () {
             // start the async workflow above
             doProject();
         }
+        
+        function copyTasks(sourcetasks, destination_workspace, destination_project, parent_task, source_project, progress_callback, callback) {
+                //   iterate over all tasks for project
+            var i = sourcetasks.length - 1;
+            var doTask, doTask2, doTask3, nextTask, endTask;
+            var newTask;
+            var subtasks;
+
+            // for each task in sourcetasks (in reverse)
+            doTask = function() {
+                if (i < 0) {
+                    endTask();
+                    return;
+                }
+                // set the parent task id if it is specified
+                if (parent_task) {
+                    sourcetasks[i]['parent'] = parent_task;
+                } else {
+                    sourcetasks[i]['parent'] = null;
+                }
+                // if the task is in the source project, then include it in the destination project also, otherwise don't
+                var task_dest = sourcetasks[i]['projects'].some(function (item) { return item.id = source_project; }) ? destination_project : null;
+                asana_create_task(destination_workspace, task_dest, sourcetasks[i], {
+                    success: doTask2
+                });
+            };
+            doTask2 = function(taskresult) {
+                newTask = taskresult.data;
+                // copy the comments for the task over
+                copyTaskComments(sourcetasks[i].id, newTask.id, doTask3);
+            };
+            doTask3 = function() {
+                // now copy the source task's subtasks to the new task
+                // get subtasks
+                asana_get_subtasks(sourcetasks[i].id, {
+                    success: doTask4
+                });
+            };
+            doTask4 = function(subtaskresult) {
+                subtasks = subtaskresult.data;
+                // make copies of the subtasks
+                if (subtasks.length > 0) {
+                    copyTasks(subtasks, destination_workspace, destination_project, newTask.id, source_project, null, nextTask);
+                } else {
+                    nextTask();
+                }
+            };
+            nextTask = function() {
+                if (progress_callback) {
+                    var progress = Math.round((sourcetasks.length - i) / sourcetasks.length * 100);
+                    progress_callback(progress);
+                }
+                i--;
+                doTask();
+            };
+            endTask = function() {
+                if (callback) {
+                    callback();
+                }
+            };
+            
+            doTask();
+        }
+        
+        function copyTaskComments(sourcetask, destination_task, callback) {
+            var c = 0;
+            var doComment, doComment2, doComment3, nextComment, endComment;
+            var comments;
+            doComment = function() {
+                // get list of comments
+                asana_get_stories(sourcetask, { success: doComment2 });
+            };
+            doComment2 = function(storiesResult) {
+                comments = storiesResult.data.filter(function (item) { return item.type == 'comment'; });
+                doComment3();
+            };
+                doComment3 = function() {
+                    if (c >= comments.length) {
+                        endComment();
+                        return;
+                    }
+                    // create comment copy on new task
+                    asana_create_story(destination_task, comments[c].text, { success: nextComment });
+                };
+                nextComment = function() {
+                    c++;
+                    doComment3();
+                };
+                endComment = function() {
+                    if (callback) {
+                        callback();
+                    }
+                };
+                
+            doComment();
+        }
 
     }
     
@@ -411,6 +449,20 @@ $(document).ready(function () {
     
     function runSignin() {
         $("#signin").show();
+    }
+    
+    function asana_create_story(taskid, text, options, loaditem) {
+        options.url = 'tasks/' + encodeURIComponent(taskid) + '/stories';
+        options.type = 'POST';
+        options.data = { text: text };
+        return asana(options, loaditem);
+    }
+    
+    function asana_get_stories(taskid, options, loaditem) {
+        options.url = 'tasks/' + encodeURIComponent(taskid) + '/stories';
+        options.type = 'GET';
+        options.data = null;
+        return asana(options, loaditem);
     }
     
     function asana_create_task(workspaceid, projectid, task, options, loaditem) {
@@ -443,7 +495,7 @@ $(document).ready(function () {
         options.url = 'tasks/' + encodeURIComponent(parentTaskId) + '/subtasks';
         if (!options.data) {
             options.data = {
-                opt_fields: 'name,completed,assignee,assignee_status,due_on,notes'
+                opt_fields: 'name,completed,assignee,assignee_status,due_on,parent,projects,notes'
             };
         }
         return asana(options, loaditem);
@@ -453,7 +505,7 @@ $(document).ready(function () {
         options.url = 'projects/' + encodeURIComponent(projectid) + '/tasks';
         if (!options.data) {
             options.data = {
-                opt_fields: 'name,completed,assignee,assignee_status,due_on,notes'
+                opt_fields: 'name,completed,assignee,assignee_status,due_on,parent,projects,notes'
             };
         }
         return asana(options, loaditem);
